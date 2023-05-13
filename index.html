@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Minesweeper</title>
+    <style>
+      .row {
+        display: flex;
+        flex-direction: row;
+      }
+
+      .cell {
+        width: 25px;
+        height: 25px;
+        border: 1px solid black;
+        text-align: center;
+        line-height: 25px;
+      }
+
+      .hidden {
+        background-color: gray;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Minesweeper</h1>
+    <div id="game"></div>
+    <audio id="audio" src="sound.mp3"></audio>
+    <script>
+      const gameContainer = document.querySelector('#game');
+      const SIZE = 10;
+      let board = [];
+
+      function createBoard() {
+        for (let i = 0; i < SIZE; i++) {
+          const row = [];
+          for (let j = 0; j < SIZE; j++) {
+            row.push({
+              hasMine: Math.random() < 0.2,
+              isShown: false,
+              isFlagged: false,
+            });
+          }
+          board.push(row);
+        }
+      }
+
+      function getAdjacentMines(x, y) {
+        let count = 0;
+
+        for (let i = Math.max(0, x - 1); i <= Math.min(SIZE - 1, x + 1); i++) {
+          for (let j = Math.max(0, y - 1); j <= Math.min(SIZE - 1, y + 1); j++) {
+            if (i === x && j === y) {
+              continue;
+            }
+
+            if (board[i][j].hasMine) {
+              count++;
+            }
+          }
+        }
+
+        return count;
+      }
+
+      function reveal(x, y) {
+        const cell = gameContainer.children[x].children[y];
+        const value = getAdjacentMines(x, y);
+        cell.classList.remove('hidden');
+        cell.textContent = value;
+
+        if (board[x][y].hasMine) {
+          const audio = document.querySelector('#audio');
+          audio.play();
+          setTimeout(() => {
+            window.location.href = 'https://www.youtube.com/watch?v=GN8EA9mpkdY';
+          }, 5000);
+        } else if (value === 0) {
+          for (let i = Math.max(0, x - 1); i <= Math.min(SIZE - 1, x + 1); i++) {
+            for (let j = Math.max(0, y - 1); j <= Math.min(SIZE - 1, y + 1); j++) {
+              if (i === x && j === y) {
+                continue;
+              }
+
+              if (!board[i][j].isShown) {
+                board[i][j].isShown = true;
+                reveal(i, j);
+              }
+            }
+          }
+        }
+      }
+
+      function flag(x, y) {
+        const cell = gameContainer.children[x].children[y];
+
+        if (board[x][y].isFlagged) {
+          cell.textContent = '';
+          board[x][y].isFlagged = false;
+        } else {
+          cell.textContent = '🚩';
+          board[x][y].isFlagged = true;
+        }
+      }
+
+      function handleClick(event) {
+        const cell = event.target;
+        const x = cell.parentElement.id;
+        const y = cell.id;
+
+        if (event.shiftKey) {
+          flag(x, y);
+        } else {
+          reveal(x, y);
+        }
+      }
+
+      function initGameBoard() {
+        for (let i = 0; i < SIZE; i++) {
+          const rowElem = document.createElement('div');
+          rowElem.className = 'row';
+          rowElem.id = i;
+          for (let j = 0; j < SIZE; j++) {
+            const cellElem = document.createElement('div');
+            cellElem.className = 'cell hidden';
+            cellElem.id = j;
+            cellElem.addEventListener('click', handleClick);
+            rowElem.appendChild(cellElem);
+          }
+          gameContainer.appendChild(rowElem);
+        }
+      }
+
+      createBoard();
+      initGameBoard();
+    </script>
+  </body>
+</html>
